@@ -15,41 +15,25 @@ fun main() {
 }
 
 fun part1(banks: List<String>): Int {
-    return banks.sumOf { it.highestJoltage() }
+    return banks.sumOf { it.highestBatteryJoltage(2) }.toInt()
 }
 
 fun part2(banks: List<String>): Long {
-    return banks.sumOf { it.highestTwelveBatteryJoltage() }
+    return banks.sumOf { it.highestBatteryJoltage(12) }
 }
 
-private fun String.highestJoltage(): Int {
-    val batteries = this.chunked(1).map { it.toInt() }
+private fun String.highestBatteryJoltage(batteryCount: Int): Long {
+    var batteries = this.map { it.digitToInt() }
+    var digitsRemaining = batteryCount
 
-    val first = batteries.dropLast(1).max()
-    val firstPos = batteries.indexOfFirst { it == first }
+    return buildList {
+        while (digitsRemaining > 0) {
+            val highest = batteries.dropLast(digitsRemaining - 1).max()
+            val highestPos = batteries.indexOfFirst { it == highest }
+            batteries = batteries.drop(highestPos + 1)
 
-    val last = batteries.drop(firstPos + 1).max()
-
-    return first * 10 + last
-}
-
-private fun String.highestTwelveBatteryJoltage(): Long {
-    var batteries = this.chunked(1).map { it.toInt() }
-
-    val maxDigits = 12
-    var digitsRemaining = maxDigits
-
-    val chosenBatteries = mutableListOf<Int>()
-
-    while (digitsRemaining > 0) {
-        val highest = batteries.dropLast(digitsRemaining - 1).max()
-        val highestPos = batteries.indexOfFirst { it == highest }
-
-        batteries = batteries.drop(highestPos + 1)
-
-        chosenBatteries.add(highest)
-        digitsRemaining--
-    }
-
-    return chosenBatteries.joinToString("") { it.toString() }.toLong()
+            add(highest)
+            digitsRemaining--
+        }
+    }.joinToString("") { it.toString() }.toLong()
 }
