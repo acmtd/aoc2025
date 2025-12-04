@@ -17,22 +17,23 @@ fun main() {
 fun part1(lines: List<String>) = removableRolls(buildGrid(lines)).size
 
 fun part2(lines: List<String>): Int {
-    return removeRolls(buildGrid(lines), 0)
+    return removeRolls(buildGrid(lines).toMutableSet(), 0)
 }
 
-tailrec fun removeRolls(grid: List<Point>, removedCount: Int): Int {
+tailrec fun removeRolls(grid: MutableSet<Point>, removedCount: Int): Int {
     val removable = removableRolls(grid)
     if (removable.isEmpty()) return removedCount
 
-    return removeRolls(grid.filter { !removable.contains(it) }, removedCount + removable.size)
+    grid.removeAll(removable.toSet())
+    return removeRolls(grid, removedCount + removable.size)
 }
 
-private fun removableRolls(grid: List<Point>) = grid.filter { point ->
+private fun removableRolls(grid: Set<Point>) = grid.filter { point ->
     point.adjacentPoints().filter { it in grid }.size < 4
 }
 
 private fun buildGrid(lines: List<String>) =
-    buildList {
+    buildSet {
         lines.forEachIndexed { y, line ->
             line.forEachIndexed { x, c ->
                 if (c == '@') {
