@@ -14,33 +14,21 @@ fun main() {
     part2(puzzleInput).println()
 }
 
-fun part1(lines: List<String>): Int {
-    val grid = buildGrid(lines)
-
-    return grid.filter { point ->
-        point.adjacentPoints().filter { it in grid }.size < 4
-    }.size
-}
+fun part1(lines: List<String>) = removableRolls(buildGrid(lines)).size
 
 fun part2(lines: List<String>): Int {
-    var grid = buildGrid(lines)
+    return removeRolls(buildGrid(lines), 0)
+}
 
-    var removed = 0
+tailrec fun removeRolls(grid: List<Point>, removedCount: Int): Int {
+    val removable = removableRolls(grid)
+    if (removable.isEmpty()) return removedCount
 
-    while (true) {
-        val removable = grid.filter { point ->
-            point.adjacentPoints().filter { it in grid }.size < 4
-        }
+    return removeRolls(grid.filter { !removable.contains(it) }, removedCount + removable.size)
+}
 
-        if (removable.isEmpty()) {
-            return removed
-        }
-        else {
-            removed += removable.size
-        }
-
-        grid = grid.filter { !removable.contains(it) }
-    }
+private fun removableRolls(grid: List<Point>) = grid.filter { point ->
+    point.adjacentPoints().filter { it in grid }.size < 4
 }
 
 private fun buildGrid(lines: List<String>) =
