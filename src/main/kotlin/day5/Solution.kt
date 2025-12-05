@@ -23,7 +23,7 @@ fun part1(blocks: List<String>): Int {
 fun part2(blocks: List<String>): Long {
     val (ranges, _) = parse(blocks)
 
-    return mergeAll(ranges).sumOf { it.last - it.first + 1 }
+    return ranges.merge().sumOf { it.last - it.first + 1 }
 }
 
 fun parse(blocks: List<String>): Pair<List<LongRange>, List<Long>> {
@@ -33,28 +33,24 @@ fun parse(blocks: List<String>): Pair<List<LongRange>, List<Long>> {
     return ranges to ingredients
 }
 
-fun mergeAll(originalRanges: List<LongRange>): List<LongRange> {
-    if (originalRanges.isEmpty()) return emptyList()
+fun List<LongRange>.merge(): List<LongRange> {
+    val sorted = sortedBy { it.first }
 
-    val sorted = originalRanges.sortedBy { it.first }
-
-    return sorted.drop(1).fold(mutableListOf(sorted.first())) { ranges, next ->
-        val current = ranges.last()
-        val merged = current.merge(next)
-
-        if (merged != null) {
-            // replace the last element with the merged version
-            ranges[ranges.lastIndex] = merged
+    return sorted.fold(emptyList()) { acc, next ->
+        if (acc.isEmpty()) {
+            acc.plusElement(next)
         } else {
-            ranges.add(next)
+            if (next.first > acc.last().last) {
+                // the next range does not overlap with the current one
+                acc.plusElement(next)
+            } else if (next.last < acc.last().last) {
+                // the next range is fully enclosed by the current one
+                acc
+            } else {
+                // partial overlap
+                val newRange = acc.last().first..next.last
+                acc.dropLast(1).plusElement(newRange)
+            }
         }
-        ranges
     }
-}
-
-fun LongRange.merge(other: LongRange): LongRange? {
-    if (this.first <= other.last + 1 && other.first <= this.last + 1) {
-        return minOf(this.first, other.first)..maxOf(this.last, other.last)
-    }
-    return null
 }
