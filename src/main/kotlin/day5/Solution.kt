@@ -33,27 +33,23 @@ fun parse(blocks: List<String>): Pair<List<LongRange>, List<Long>> {
     return ranges to ingredients
 }
 
-fun mergeAll(ranges: List<LongRange>): List<LongRange> {
-    if (ranges.isEmpty()) return emptyList()
+fun mergeAll(originalRanges: List<LongRange>): List<LongRange> {
+    if (originalRanges.isEmpty()) return emptyList()
 
-    val sorted = ranges.sortedBy { it.first }
-    val result = mutableListOf<LongRange>()
+    val sorted = originalRanges.sortedBy { it.first }
 
-    var current = sorted[0]
-
-    for (i in 1 until sorted.size) {
-        val next = sorted[i]
+    return sorted.drop(1).fold(mutableListOf(sorted.first())) { ranges, next ->
+        val current = ranges.last()
         val merged = current.merge(next)
 
         if (merged != null) {
-            current = merged
+            // replace the last element with the merged version
+            ranges[ranges.lastIndex] = merged
         } else {
-            result.add(current)
-            current = next
+            ranges.add(next)
         }
+        ranges
     }
-    result.add(current)
-    return result
 }
 
 fun LongRange.merge(other: LongRange): LongRange? {
