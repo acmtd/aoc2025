@@ -39,9 +39,10 @@ fun parsePart2(input: List<String>): Pair<List<String>, List<List<String>>> {
             var pos = start
 
             val operands = buildList {
-                while (pos < next-1) {
+                while (pos < next - 1) {
                     val number =
-                        operandLines.joinToString("") { if (it.length < (pos+1)) "" else it.substring(pos, pos+1) }.trim()
+                        operandLines.joinToString("") { if (it.length < (pos + 1)) "" else it.substring(pos, pos + 1) }
+                            .trim()
 
                     if (number.isNotEmpty()) add(number)
                     pos++
@@ -58,44 +59,21 @@ fun parsePart2(input: List<String>): Pair<List<String>, List<List<String>>> {
 fun part1(input: List<String>): Long {
     val (operators, operands) = parse(input)
 
-    return compute(operators, operands)
-}
-
-private fun compute(
-    operators: List<String>,
-    operands: List<List<String>>
-): Long {
-    val computations = operators.mapIndexed { index, operator ->
-        val numbers = operands.map { it[index].toLong() }
-
-        when (operator) {
-            "+" -> numbers.sum()
-            "*" -> numbers.fold(1L) { acc, next -> acc * next }
-            else -> throw IllegalArgumentException("Unsupported operator: $operator")
-        }
-    }
-
-    return computations.sum()
-}
-
-private fun computePart2(
-    operators: List<String>,
-    operands: List<List<String>>
-): Long {
-    val computations = operators.mapIndexed { index, operator ->
-        val numbers = operands[index].map { it.toLong() }
-
-        when (operator) {
-            "+" -> numbers.sum()
-            "*" -> numbers.fold(1L) { acc, next -> acc * next }
-            else -> throw IllegalArgumentException("Unsupported operator: $operator")
-        }
-    }
-
-    return computations.sum()
+    return operators.mapIndexed { index, operator ->
+        applyOperator(operator, operands.map { it[index].toLong() })
+    }.sum()
 }
 
 fun part2(input: List<String>): Long {
     val (operators, operands) = parsePart2(input)
-    return computePart2(operators, operands)
+
+    return operators.mapIndexed { index, operator ->
+        applyOperator(operator, operands[index].map { it.toLong() })
+    }.sum()
+}
+
+private fun applyOperator(operator: String, numbers: List<Long>): Long = when (operator) {
+    "+" -> numbers.sum()
+    "*" -> numbers.fold(1L) { acc, next -> acc * next }
+    else -> throw IllegalArgumentException("Unsupported operator: $operator")
 }
