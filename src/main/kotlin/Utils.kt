@@ -6,7 +6,7 @@ import kotlin.io.path.readText
 /**
  * Reads lines from the given input txt file.
  */
-fun readAsString(name: String) = Path("src/main/resources/$name.txt").readText().trim()
+fun readAsString(name: String) = Path("src/main/resources/$name.txt").readText()
 fun readAsLines(name: String) = readAsString(name).lines()
 fun readAsBlocks(name: String) = readAsString(name).split("\n\n")
 
