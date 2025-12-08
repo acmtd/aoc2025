@@ -65,27 +65,18 @@ fun part2(lines: List<String>): Long {
     error("Did not manage to connect all circuits")
 }
 
-private fun rearrangeCircuits(
-    circuitList: MutableList<MutableSet<Position>>,
-    boxes: Pair<Position, Position>
-) {
-    val existingCircuits = circuitList.filter { boxes.first in it || boxes.second in it }
+private fun rearrangeCircuits(circuitList: MutableList<MutableSet<Position>>, boxes: Pair<Position, Position>) {
+    val relatedCircuits = circuitList.filter { boxes.first in it || boxes.second in it }
+    val mergedCircuit = relatedCircuits
+        .flatMap { it.asSequence() }
+        .toMutableSet()
+        .apply {
+            add(boxes.first)
+            add(boxes.second)
+        }
 
-    if (existingCircuits.size > 1) {
-        // need to merge them together
-        val newCircuit = existingCircuits.flatten().toMutableSet()
-        newCircuit.add(boxes.first)
-        newCircuit.add(boxes.second)
-
-        circuitList.removeAll(existingCircuits)
-        circuitList.add(newCircuit)
-    } else if (existingCircuits.size == 1) {
-        val existingCircuit = existingCircuits.first()
-        existingCircuit.add(boxes.first)
-        existingCircuit.add(boxes.second)
-    } else {
-        circuitList.add(mutableSetOf(boxes.first, boxes.second))
-    }
+    circuitList.removeAll(relatedCircuits)
+    circuitList.add(mergedCircuit)
 }
 
 private fun getBoxes(lines: List<String>): List<Position> = lines.map { it.split(",") }
