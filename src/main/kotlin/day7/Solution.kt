@@ -17,6 +17,7 @@ fun main() {
 
 data class Point(val row: Int, val col: Int)
 data class State(val start: Point, val splitters: List<Point>)
+data class SplitterState(val nextSplitters: Set<Point>, val timelines: Long)
 
 fun part1(lines: List<String>): Int {
     val state = parse(lines)
@@ -39,8 +40,6 @@ fun part1(lines: List<String>): Int {
 
     return visitedSplitters.size
 }
-
-data class SplitterState(val nextSplitters: Set<Point>, val timelines: Long)
 
 fun part2(lines: List<String>): Long {
     val state = parse(lines)
@@ -73,17 +72,18 @@ fun part2(lines: List<String>): Long {
 
         val solved = splitterStates
             .filterKeys { it !in done }
-            .filterValues { it.nextSplitters.isEmpty() }.keys
+            .filterValues { it.nextSplitters.isEmpty() }
+            .keys
 
-        solved.forEach { splitter ->
-            val unsolved = splitterStates.filterValues { splitter in it.nextSplitters }.keys
+        solved.forEach { s ->
+            val unsolved = splitterStates.filterValues { s in it.nextSplitters }.keys
 
-            unsolved.forEach { unsolved ->
-                val existingState = splitterStates[unsolved]!!
-                splitterStates[unsolved] = SplitterState(
-                    existingState.nextSplitters - splitter,
-                    existingState.timelines + splitterStates[splitter]!!.timelines
-                )
+            unsolved.forEach { u ->
+                val existingState = splitterStates[u]!!
+                splitterStates[u] =
+                    SplitterState(
+                        existingState.nextSplitters - s, existingState.timelines + splitterStates[s]!!.timelines
+                    )
             }
         }
 
