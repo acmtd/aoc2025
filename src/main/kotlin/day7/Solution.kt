@@ -21,74 +21,65 @@ data class SplitterState(val nextSplitters: Set<Point>, val timelines: Long)
 
 fun part1(lines: List<String>): Int {
     val state = parse(lines)
-
     val queue = ArrayDeque<Point>()
-    queue.addLast(state.start)
+    queue.add(state.start)
 
-    val visitedSplitters = mutableListOf<Point>()
+    val visited = mutableListOf<Point>()
 
     while (queue.isNotEmpty()) {
         val point = queue.removeFirst()
+        val next = nextSplitter(point, state.splitters) ?: continue
 
-        val nextPoint = nextSplitter(point, state.splitters) ?: continue
+        if (next in visited) continue
 
-        if (visitedSplitters.contains(nextPoint)) continue
-        visitedSplitters.add(nextPoint)
-
-        queue.addAll(nextPoint.adjacentPoints())
+        visited += next
+        queue += next.adjacentPoints()
     }
 
-    return visitedSplitters.size
+    return visited.size
 }
 
 fun part2(lines: List<String>): Long {
     val state = parse(lines)
-
-    val splitterStates = state.splitters.associateWith { SplitterState(emptySet(), 0L) }.toMutableMap()
-
-    state.splitters.forEach { splitter ->
-        var timelines = 0L
-        val nextSplitters = mutableSetOf<Point>()
-
-        splitter.adjacentPoints().forEach { p ->
-            val next = nextSplitter(p, state.splitters)
-
-            if (next == null) {
-                timelines++
-            } else {
-                nextSplitters.add(next)
-            }
-        }
-
-        splitterStates[splitter] = SplitterState(nextSplitters, timelines)
-    }
-
+    val states = state.splitters.associateWith { computeSplitterState(it, state.splitters) }.toMutableMap()
     val done = mutableSetOf<Point>()
 
-    while (true) {
-        if (done.containsAll(state.splitters)) {
-            return splitterStates.minBy { it.key.row }.value.timelines
-        }
-
-        val solved = splitterStates
+    while (done.size < state.splitters.size) {
+        val solved = states
             .filterKeys { it !in done }
             .filterValues { it.nextSplitters.isEmpty() }
-            .keys
 
-        solved.forEach { s ->
-            val unsolved = splitterStates.filterValues { s in it.nextSplitters }.keys
-
-            unsolved.forEach { u ->
-                val existingState = splitterStates[u]!!
-                splitterStates[u] =
-                    SplitterState(
-                        existingState.nextSplitters - s, existingState.timelines + splitterStates[s]!!.timelines
-                    )
-            }
+        solved.forEach { (solvedSplitter, solvedState) ->
+            states.filterValues { solvedSplitter in it.nextSplitters }
+                .forEach { (unsolvedSplitter, unsolvedState) ->
+                    states[unsolvedSplitter] =
+                        SplitterState(
+                            unsolvedState.nextSplitters - solvedSplitter,
+                            unsolvedState.timelines + solvedState.timelines
+                        )
+                }
         }
 
-        done.addAll(solved)
+        done += solved.keys
     }
+
+    return states.minBy { it.key.row }.value.timelines
+}
+
+fun computeSplitterState(splitter: Point, splitters: List<Point>): SplitterState {
+    val nextSplitters = mutableSetOf<Point>()
+    var timelines = 0L
+
+    for (adj in splitter.adjacentPoints()) {
+        val next = nextSplitter(adj, splitters)
+        if (next == null) {
+            timelines++
+        } else {
+            nextSplitters += next
+        }
+    }
+
+    return SplitterState(nextSplitters, timelines)
 }
 
 fun nextSplitter(point: Point, splitters: List<Point>): Point? =
