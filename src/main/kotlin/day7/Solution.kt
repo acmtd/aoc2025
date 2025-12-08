@@ -2,7 +2,6 @@ package day7
 
 import println
 import readAsLines
-import kotlin.collections.emptyList
 import kotlin.collections.forEach
 
 fun main() {
@@ -13,7 +12,7 @@ fun main() {
     part1(puzzleInput).println()
 
     check(part2(testInput) == 40L)
-    part2(puzzleInput).println() // 923423101 is too low
+    part2(puzzleInput).println()
 }
 
 data class Point(val row: Int, val col: Int)
@@ -57,7 +56,7 @@ fun part2(lines: List<String>): Long {
             val next = nextSplitter(p, state.splitters)
 
             if (next == null) {
-                timelines += 1
+                timelines++
             } else {
                 nextSplitters.add(next)
             }
@@ -67,38 +66,33 @@ fun part2(lines: List<String>): Long {
     }
 
     while (true) {
-        val solvedSplitters = splitterStates.filter { it.value.nextSplitters.isEmpty() }.keys
+        val solved = splitterStates.filterValues { it.nextSplitters.isEmpty() }.keys
 
-        if (solvedSplitters.size == splitterStates.size) {
+        if (solved.size == splitterStates.size) {
             return splitterStates.minBy { it.key.row }.value.timelines
         }
 
-        solvedSplitters.forEach { splitter ->
-            val unsolvedSplitters = splitterStates.filter { splitter in it.value.nextSplitters }.keys
+        solved.forEach { splitter ->
+            val unsolved = splitterStates.filterValues { splitter in it.nextSplitters }.keys
 
-            unsolvedSplitters.forEach { unsolved ->
+            unsolved.forEach { unsolved ->
                 val existingState = splitterStates[unsolved]!!
-                val newState = SplitterState(
+                splitterStates[unsolved] = SplitterState(
                     existingState.nextSplitters - splitter,
                     existingState.timelines + splitterStates[splitter]!!.timelines
                 )
-                splitterStates[unsolved] = newState
             }
         }
     }
 
 }
 
-fun nextSplitter(point: Point, splitters: List<Point>): Point? {
-    return splitters.filter { it.col == point.col && it.row > point.row }.minByOrNull { it.row }
-}
+fun nextSplitter(point: Point, splitters: List<Point>): Point? =
+    splitters.asSequence()
+        .filter { it.col == point.col && it.row > point.row }
+        .minByOrNull { it.row }
 
-fun Point.adjacentPoints(): Set<Point> {
-    return setOf(
-        Point(row, col - 1),
-        Point(row, col + 1)
-    )
-}
+fun Point.adjacentPoints() = setOf(Point(row, col - 1), Point(row, col + 1))
 
 fun parse(lines: List<String>): State {
     var start = Point(0, 0)
