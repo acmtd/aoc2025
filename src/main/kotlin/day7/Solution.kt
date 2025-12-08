@@ -16,7 +16,7 @@ fun main() {
 }
 
 data class Point(val row: Int, val col: Int)
-data class State(val start: Point, val splitters: List<Point>, val rowCount: Int, val colCount: Int)
+data class State(val start: Point, val splitters: List<Point>)
 
 fun part1(lines: List<String>): Int {
     val state = parse(lines)
@@ -34,8 +34,7 @@ fun part1(lines: List<String>): Int {
         if (visitedSplitters.contains(nextPoint)) continue
         visitedSplitters.add(nextPoint)
 
-        queue.add(Point(nextPoint.row, nextPoint.col - 1))
-        queue.add(Point(nextPoint.row, nextPoint.col + 1))
+        queue.addAll(nextPoint.adjacentPoints())
     }
 
     return visitedSplitters.size
@@ -84,7 +83,6 @@ fun part2(lines: List<String>): Long {
             }
         }
     }
-
 }
 
 fun nextSplitter(point: Point, splitters: List<Point>): Point? =
@@ -109,5 +107,5 @@ fun parse(lines: List<String>): State {
         }
     }
 
-    return State(start, splitters, lines.size, lines[0].length)
+    return State(start, splitters)
 }
