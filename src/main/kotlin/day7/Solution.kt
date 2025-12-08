@@ -64,12 +64,16 @@ fun part2(lines: List<String>): Long {
         splitterStates[splitter] = SplitterState(nextSplitters, timelines)
     }
 
-    while (true) {
-        val solved = splitterStates.filterValues { it.nextSplitters.isEmpty() }.keys
+    val done = mutableSetOf<Point>()
 
-        if (solved.size == splitterStates.size) {
+    while (true) {
+        if (done.containsAll(state.splitters)) {
             return splitterStates.minBy { it.key.row }.value.timelines
         }
+
+        val solved = splitterStates
+            .filterKeys { it !in done }
+            .filterValues { it.nextSplitters.isEmpty() }.keys
 
         solved.forEach { splitter ->
             val unsolved = splitterStates.filterValues { splitter in it.nextSplitters }.keys
@@ -82,6 +86,8 @@ fun part2(lines: List<String>): Long {
                 )
             }
         }
+
+        done.addAll(solved)
     }
 }
 
