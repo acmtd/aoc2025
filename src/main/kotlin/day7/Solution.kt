@@ -15,14 +15,16 @@ fun main() {
     part2(puzzleInput).println()
 }
 
-data class Point(val row: Int, val col: Int)
+data class Point(val row: Int, val col: Int) {
+    fun adjacentPoints() = setOf(Point(row, col - 1), Point(row, col + 1))
+}
+
 data class State(val start: Point, val splitters: List<Point>)
 data class SplitterState(val nextSplitters: Set<Point>, val timelines: Long)
 
 fun part1(lines: List<String>): Int {
     val state = parse(lines)
-    val queue = ArrayDeque<Point>()
-    queue.add(state.start)
+    val queue = ArrayDeque(listOf(state.start))
 
     val visited = mutableListOf<Point>()
 
@@ -40,11 +42,11 @@ fun part1(lines: List<String>): Int {
 }
 
 fun part2(lines: List<String>): Long {
-    val state = parse(lines)
-    val states = state.splitters.associateWith { computeSplitterState(it, state.splitters) }.toMutableMap()
+    val splitters = parse(lines).splitters
+    val states = splitters.associateWith { computeSplitterState(it, splitters) }.toMutableMap()
     val done = mutableSetOf<Point>()
 
-    while (done.size < state.splitters.size) {
+    while (done.size < splitters.size) {
         val solved = states
             .filterKeys { it !in done }
             .filterValues { it.nextSplitters.isEmpty() }
@@ -86,8 +88,6 @@ fun nextSplitter(point: Point, splitters: List<Point>): Point? =
     splitters.asSequence()
         .filter { it.col == point.col && it.row > point.row }
         .minByOrNull { it.row }
-
-fun Point.adjacentPoints() = setOf(Point(row, col - 1), Point(row, col + 1))
 
 fun parse(lines: List<String>): State {
     var start = Point(0, 0)
