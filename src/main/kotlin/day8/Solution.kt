@@ -7,7 +7,7 @@ import kotlin.math.absoluteValue
 
 fun main() {
     val testInput = readAsLines("day8/test")
-    check(part1(testInput, 10) == 40L)
+    check(part1(testInput, 10) == 40)
 
     val puzzleInput = readAsLines("day8/problem")
     part1(puzzleInput, 1000).println()
@@ -26,7 +26,7 @@ data class Position(val x: Long, val y: Long, val z: Long) {
     }
 }
 
-fun part1(lines: List<String>, pairsToConnect: Int): Long {
+fun part1(lines: List<String>, pairsToConnect: Int): Int {
     val boxes = getBoxes(lines)
     val distanceMap = getDistanceMap(boxes)
 
@@ -41,7 +41,7 @@ fun part1(lines: List<String>, pairsToConnect: Int): Long {
     return circuitList.sortedBy { it.size }.reversed()
         .take(3)
         .map { it.size }
-        .reduce(Int::times).toLong()
+        .reduce(Int::times)
 }
 
 fun part2(lines: List<String>): Long {
