@@ -1,14 +1,15 @@
 package day9
 
+import com.madgag.gif.fmsware.AnimatedGifEncoder
 import println
 import readAsLines
+import java.awt.AlphaComposite
 import kotlin.math.max
 import kotlin.math.min
 
 import java.awt.Color
+import java.awt.Graphics2D
 import java.awt.image.BufferedImage
-import java.io.File
-import javax.imageio.ImageIO
 import kotlin.collections.any
 
 fun main() {
@@ -20,6 +21,7 @@ fun main() {
 
     check(part2(testInput) == 24L)
     part2(puzzleInput).println()
+//    part2WithVisualization(puzzleInput).println()
 }
 
 fun part1(input: List<String>): Long {
@@ -126,8 +128,73 @@ fun parse(lines: List<String>): List<Point> {
     return lines.map { it.split(",") }.map { Point(it[0].toLong(), it[1].toLong()) }
 }
 
-// helper function to dump the polygon and an optional rectangle to PNG file for debugging
-fun visualizeToImage(polygon: Polygon, rectangle: Rectangle?, filename: String) {
+
+// Visualization code (AI written, self-tweaked)
+fun part2WithVisualization(input: List<String>): Long {
+    val redTiles = parse(input)
+    val polygon = redTiles.boundingPolygon()
+
+    val rectangles = redTiles.flatMapIndexed { idx, tile ->
+        redTiles.drop(idx + 1).map { other -> Rectangle.fromPoints(tile, other) }
+    }.sortedBy { it.area() }.reversed()
+
+    val baseImage = createPolygonImage(polygon)
+    val (minX, maxX, minY, maxY, scale) = getPolygonBounds(polygon)
+
+    val encoder = AnimatedGifEncoder()
+    encoder.start("day9_search.gif")
+    encoder.setDelay(100)
+    encoder.setRepeat(-1)
+
+    val answer = rectangles.first { rectangle ->
+        rectangle.corners().filterNot { it in redTiles }.all { polygon.inside(it) }
+                && !polygon.intersects(rectangle)
+    }
+
+    val rectanglesToShow = rectangles.filter { it.corners().all { polygon.inside(it) } }
+        .filter { it.area() >= answer.area() }
+
+    val framesToCreate = 30
+    val step = max(1, rectanglesToShow.size / framesToCreate)
+
+    rectanglesToShow.forEachIndexed { idx, rectangle ->
+        val isAnswer = rectangle == answer
+
+        if (idx % step == 0 || isAnswer) {
+            val frame = copyImage(baseImage)
+            val g = frame.createGraphics()
+            val color = if (isAnswer) Color.GREEN else Color.RED
+            drawRectangle(g, rectangle, color, minX, minY, scale, frame.width, frame.height)
+            g.dispose()
+
+            encoder.addFrame(frame)
+        }
+    }
+
+    encoder.finish()
+    return answer.area()
+}
+
+fun copyImage(source: BufferedImage): BufferedImage {
+    val copy = BufferedImage(source.width, source.height, source.type)
+    val g = copy.createGraphics()
+    g.drawImage(source, 0, 0, null)
+    g.dispose()
+    return copy
+}
+
+data class PolygonBounds(val minX: Long, val maxX: Long, val minY: Long, val maxY: Long, val scale: Int)
+
+fun getPolygonBounds(polygon: Polygon): PolygonBounds {
+    val allX = polygon.edges.flatMap { listOf(it.from.x, it.to.x) }
+    val allY = polygon.edges.flatMap { listOf(it.from.y, it.to.y) }
+    val scale = maxOf(1, maxOf(allX.max() - allX.min(), allY.max() - allY.min()).toInt() / 2000)
+    return PolygonBounds(allX.min(), allX.max(), allY.min(), allY.max(), scale)
+}
+
+fun createPolygonImage(polygon: Polygon): BufferedImage {
+    // Similar to visualizeToImage but return the image
+    // Color the rectangle red if invalid, green if valid
     val allX = polygon.edges.flatMap { listOf(it.from.x, it.to.x) }
     val allY = polygon.edges.flatMap { listOf(it.from.y, it.to.y) }
 
@@ -173,31 +240,32 @@ fun visualizeToImage(polygon: Polygon, rectangle: Rectangle?, filename: String) 
         }
     }
 
-    // Draw rectangle in red if provided
-    rectangle?.let { rect ->
-        g.color = Color.RED
-        rect.edges().forEach { edge ->
-            if (edge.isHorizontal()) {
-                edge.range().forEach { x ->
-                    val px = ((x - minX) / scale).toInt()
-                    val py = ((edge.from.y - minY) / scale).toInt()
-                    if (px in 0 until scaledWidth && py in 0 until scaledHeight) {
-                        image.setRGB(px, py, Color.RED.rgb)
-                    }
-                }
-            } else {
-                edge.range().forEach { y ->
-                    val px = ((edge.from.x - minX) / scale).toInt()
-                    val py = ((y - minY) / scale).toInt()
-                    if (px in 0 until scaledWidth && py in 0 until scaledHeight) {
-                        image.setRGB(px, py, Color.RED.rgb)
-                    }
-                }
-            }
-        }
-    }
-
     g.dispose()
-    ImageIO.write(image, "PNG", File(filename))
-    println("Image written to $filename")
+    return image
+}
+
+fun drawRectangle(
+    g: Graphics2D,
+    rect: Rectangle,
+    color: Color,
+    minX: Long,
+    minY: Long,
+    scale: Int,
+    scaledWidth: Int,
+    scaledHeight: Int
+) {
+    // Draw filled rectangle with transparency
+    g.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f) // 30% opacity
+    g.color = color
+
+    val x = ((rect.minX - minX) / scale).toInt()
+    val y = ((rect.minY - minY) / scale).toInt()
+    val width = ((rect.maxX - rect.minX + 1) / scale).toInt()
+    val height = ((rect.maxY - rect.minY + 1) / scale).toInt()
+
+    g.fillRect(x, y, width, height)
+
+    // Draw solid outline
+    g.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f) // Full opacity
+    g.drawRect(x, y, width, height)
 }

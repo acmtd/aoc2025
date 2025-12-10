@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
+    implementation("com.madgag:animated-gif-lib:1.4")
 }
 
 tasks.test {
