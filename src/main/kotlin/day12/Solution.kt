@@ -15,8 +15,9 @@ fun part1(input: List<String>): Int {
     val totalAreas = presents.map { present -> present.count { it in "#." } }
 
     val (definitely, maybe) = goals.partition { (area, counts) ->
-        // if it would still fit if the "." were all "#" then it's definitely ok
-        val availableArea = area.reduce(Int::times)
+        // if it would still fit if the "." were all "#" then it's definitely ok, however
+        // need to modify the target area to only consider 3x3 blocks instead of the entire space
+        val availableArea = (area.first() / 3) * (area.last() / 3) * 9
         val maxSpaceUsed = counts.indices.sumOf { i -> counts[i] * totalAreas[i] }
 
         maxSpaceUsed <= availableArea
