@@ -11,16 +11,29 @@ fun main() {
 fun part1(input: List<String>): Int {
     val (presents, goals) = parse(input)
 
-    val presentAreas = presents.map { p -> p.count { it == '#' } }
+    val presentAreas = presents.map { present -> present.count { it == '#' } }
+    val totalAreas = presents.map { present -> present.count { it in "#." } }
 
-    return goals.count { (area, counts) ->
+    val (definitely, maybe) = goals.partition { (area, counts) ->
+        // if it would still fit if the "." were all "#" then it's definitely ok
         val availableArea = area.reduce(Int::times)
+        val maxSpaceUsed = counts.indices.sumOf { i -> counts[i] * totalAreas[i] }
 
-        val requiredMinimumArea = counts.mapIndexed { idx, count ->
-            count * presentAreas[idx]
-        }.sum()
+        maxSpaceUsed <= availableArea
+    }.let { (possible, unknown) ->
+        val maybeCount = unknown.count { (area, counts) ->
+            // if the available space has enough room for all the "#" then it's at least a maybe
+            val availableArea = area.reduce(Int::times)
+            val minimumRequired = counts.indices.sumOf { i -> counts[i] * presentAreas[i] }
+            minimumRequired <= availableArea
+        }
 
-        (requiredMinimumArea <= availableArea)
+        possible.size to maybeCount
+    }
+
+    return when {
+        maybe == 0 -> definitely
+        else -> error("Need to code box packing algorithm to determine which presents can fit")
     }
 }
 
@@ -28,8 +41,9 @@ fun parse(blocks: List<String>): Pair<List<String>, List<Pair<List<Int>, List<In
     val presents = blocks.dropLast(1)
 
     val goals = blocks.last().split("\n").map { line ->
-        val area = line.substringBefore(":").split("x").map(String::toInt)
-        val counts = line.substringAfter(": ").split(" ").map { num -> num.toInt() }
+        val (areaStr, countsStr) = line.split(": ")
+        val area = areaStr.split("x").map(String::toInt)
+        val counts = countsStr.split(" ").map { num -> num.toInt() }
 
         area to counts
     }
