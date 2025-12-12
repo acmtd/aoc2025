@@ -13,6 +13,7 @@ dependencies {
     testImplementation(kotlin("test"))
     implementation("com.madgag:animated-gif-lib:1.4")
     implementation("tools.aqua:z3-turnkey:4.12.2.1")
+    implementation("guru.nidi:graphviz-kotlin:0.18.1")
 }
 
 tasks.test {
